@@ -7,16 +7,20 @@
 //
 
 import UIKit
-import CoreData
+import RealmSwift
 
 class CategoryViewController: UITableViewController {
     
+    //initializing Realm
+    let realm = try! Realm()
+    
     //category array
-    var categoryArray = [Category]()
+    //var categoryArray = [Category]()
+    var categoryArray: Results<Category>?
     
     //let defaults = UserDefaults.standard
     
-    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    //let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -31,17 +35,15 @@ class CategoryViewController: UITableViewController {
     
     //to get number of rows
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return categoryArray.count
+        return categoryArray?.count ?? 1
     }
     
     //specifies how a cell to be shown, to add content to the clicked cell
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
         let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
-        
-        let item = categoryArray[indexPath.row]
-        
-        cell.textLabel?.text = item.name
+                
+        cell.textLabel?.text = categoryArray?[indexPath.row].name ?? "No Categories Added Yet!"
         
         cell.accessoryType = .disclosureIndicator
         
@@ -65,7 +67,7 @@ class CategoryViewController: UITableViewController {
         //grab the todo lists for selected category
         if let indexPath = tableView.indexPathForSelectedRow {
             //save the reference to selected category to selectedCategory
-            destinationVC.selectedCategory = categoryArray[indexPath.row]
+            destinationVC.selectedCategory = categoryArray?[indexPath.row]
         }
     }
 
@@ -86,11 +88,11 @@ class CategoryViewController: UITableViewController {
                     self.present(alert, animated: true, completion: nil)
                 }
             } else {
-                let newCategory =  Category(context: self.context)
+                let newCategory =  Category()
                 newCategory.name = textField.text!
-                self.categoryArray.append(newCategory)
+                //self.categoryArray.append(newCategory) no need to append as Results is auto-updating container type
                 
-                self.saveCategories()
+                self.save(category: newCategory)
                 
                 print("Added Category")
         
@@ -109,9 +111,11 @@ class CategoryViewController: UITableViewController {
     }
     
     //MARK: - Data Manipulation Methods save and load data
-    func saveCategories() {
+    func save(category: Category) {
         do {
-            try context.save()
+            try realm.write {
+                realm.add(category)
+            }
         } catch {
             print("Error saving category: \(error)")
         }
@@ -120,13 +124,8 @@ class CategoryViewController: UITableViewController {
     }
     
     func loadCategories() {
-        let request: NSFetchRequest<Category> = Category.fetchRequest()
-        do {
-            categoryArray = try context.fetch(request)
-        } catch {
-            print("Error fetching categories: \(error)")
-        }
-        
+        //fetch data from Realm DB
+        categoryArray = realm.objects(Category.self)
         tableView.reloadData()
     }
 }
