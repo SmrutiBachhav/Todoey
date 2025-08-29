@@ -8,15 +8,16 @@
 
 import UIKit
 import RealmSwift
+import SwipeCellKit
 
-class CategoryViewController: UITableViewController {
+class CategoryViewController: SwipeTableViewController  {
     
     //initializing Realm
     let realm = try! Realm()
     
     //category array
     //var categoryArray = [Category]()
-    var categoryArray: Results<Category>?
+    var categories: Results<Category>?
     
     //let defaults = UserDefaults.standard
     
@@ -35,15 +36,15 @@ class CategoryViewController: UITableViewController {
     
     //to get number of rows
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return categoryArray?.count ?? 1
+        return categories?.count ?? 1
     }
     
     //specifies how a cell to be shown, to add content to the clicked cell
+    //overrides from SwipeTableViewController: Swipe Cell property + cell label text
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
-                
-        cell.textLabel?.text = categoryArray?[indexPath.row].name ?? "No Categories Added Yet!"
+        //tap into the cell that gets created at current indexPath inside our super view i.e SwipeTableViewController
+        let cell  = super.tableView(tableView, cellForRowAt: indexPath)
+        cell.textLabel?.text = categories?[indexPath.row].name ?? "No Categories Added Yet!"
         
         cell.accessoryType = .disclosureIndicator
         
@@ -67,7 +68,7 @@ class CategoryViewController: UITableViewController {
         //grab the todo lists for selected category
         if let indexPath = tableView.indexPathForSelectedRow {
             //save the reference to selected category to selectedCategory
-            destinationVC.selectedCategory = categoryArray?[indexPath.row]
+            destinationVC.selectedCategory = categories?[indexPath.row]
         }
     }
 
@@ -125,7 +126,23 @@ class CategoryViewController: UITableViewController {
     
     func loadCategories() {
         //fetch data from Realm DB
-        categoryArray = realm.objects(Category.self)
+        categories = realm.objects(Category.self)
         tableView.reloadData()
     }
+    
+    //Delete data using swipe
+    override func updateModel(at indexPath: IndexPath) {
+        //super.updateModel(at: indexPath)
+        if let categoryForDeletion = self.categories?[indexPath.row] { //need to unwrap the optional categories
+            do {
+                try self.realm.write { //write to update realm db
+                    self.realm.delete(categoryForDeletion)
+                }
+            } catch {
+                print("Error deleting data: \(error)")
+            }
+        }
+    }
 }
+
+

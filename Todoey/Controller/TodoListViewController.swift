@@ -9,7 +9,7 @@
 import UIKit
 import RealmSwift
 
-class TodoListViewController: UITableViewController {
+class TodoListViewController: SwipeTableViewController {
     
     //var itemArray = ["Find Mike", "Buy milk", "Go to gym"]
     var todoItems : Results<Item>?
@@ -41,7 +41,8 @@ class TodoListViewController: UITableViewController {
     //to add content to the specific cell through we can say indexpath (list of indices that specifies the location)
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         //resuable cell - create whole bunch of reusable cells
-        let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
+//        let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
         
         if let item = todoItems?[indexPath.row] {
             //indexpath.row current row of the current indexpath. row- the value of the current index path of the row
@@ -132,6 +133,19 @@ class TodoListViewController: UITableViewController {
         todoItems = selectedCategory?.items.sorted(byKeyPath: "title", ascending: true)
         
         tableView.reloadData()
+    }
+    
+    //Delete data using Swipe Cell
+    override func updateModel(at indexPath: IndexPath) {
+        if let itemForDeletion = self.todoItems?[indexPath.row] {
+            do {
+                try self.realm.write {
+                    self.realm.delete(itemForDeletion)
+                }
+            } catch {
+                print("Error deleting data: \(error)")
+            }
+        }
     }
 
 }
