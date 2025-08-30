@@ -11,7 +11,8 @@ import RealmSwift
 import ChameleonFramework
 
 class TodoListViewController: SwipeTableViewController {
-    
+     
+    @IBOutlet weak var searchBar: UISearchBar!
     //var itemArray = ["Find Mike", "Buy milk", "Go to gym"]
     var todoItems : Results<Item>?
     
@@ -27,10 +28,43 @@ class TodoListViewController: SwipeTableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist"))
+        //print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist"))
         
         tableView.separatorStyle = .none
+/*        navigation Controller here can throw error as todolistViewController is not in nav controller, viewDidLoad is being called controller         property is updated at this pt it is nil, nav stack is not established
+        change the background color of the nav bar. using bartintcolor as ot will change the color for both nav bar and status bar unlike bgcolor only for nav bar
+        force unwrapping (!) selectedCategory will not be safe here therfore optional binding iflet
+        if let colorHex = selectedCategory?.color {
+            //check if navcontroller is nil then....
+            guard let navBar = navigationController?.navigationBar.barTintColor else {
+                fatalError("Nav controller doesn't exist! it is nil")
+            }
+            navigationController?.navigationBar.barTintColor =  UIColor(hexString: colorHex)
+        }
+*/
     
+    }
+    //just before viewDidLoad,nav stack is established, anv controller is not nil
+    override func viewWillAppear(_ animated: Bool) {
+        if let colorHex = selectedCategory?.color {
+            //selectedcategry can forced unwrap as we have done optional binding earlier ?.color
+            title = selectedCategory!.name
+            //check if navcontroller is nil then....
+            guard let navBar = navigationController?.navigationBar else {
+                fatalError("Nav controller doesn't exist! it is nil")
+            }
+            if let navBarColor = UIColor(hexString: colorHex){
+                navBar.backgroundColor = navBarColor
+                //applies nav items and bar button items
+                navBar.tintColor = ContrastColorOf(navBarColor, returnFlat: true)
+                
+                navBar.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor: ContrastColorOf(navBarColor, returnFlat: true)]
+                
+                searchBar.barTintColor = navBarColor
+            
+            }
+
+        }
     }
     
     //MARK: - TableView DataSource Method
@@ -53,9 +87,11 @@ class TodoListViewController: SwipeTableViewController {
             //darken(byper...) is optional and backgroundColor needs definite value therfore if let to unwrap the optional
             //check for UIColor is not empty then darken by.... SelectedCategory will definitely have value as todoItems definitely has value and comes from selectedCategory(loadItems)
             if let color = UIColor(hexString: selectedCategory!.color)?.darken(byPercentage: CGFloat(indexPath.row)/CGFloat(todoItems!.count)) {
-                cell.backgroundColor = color
+                configurePebbleView(for: cell, with: color)
+
+                //cell.backgroundColor = color
                 //text color according to background color (light->black text or dark->white text)
-                cell.textLabel?.textColor = ContrastColorOf(color, returnFlat: true)
+                //cell.textLabel?.textColor = ContrastColorOf(color, returnFlat: true)
             }
             
             cell.accessoryType = item.done ? .checkmark : .none
@@ -165,7 +201,7 @@ class TodoListViewController: SwipeTableViewController {
 extension TodoListViewController : UISearchBarDelegate {
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         //show filtered data according to search. noneed to call load items again as only the filtered data is showned
-        todoItems = todoItems?.filter("title CONTAINS[cd] %a", searchBar.text!).sorted(byKeyPath: "dateCreated", ascending: true) //shows item created earlier
+        todoItems = todoItems?.filter("title CONTAINS[cd] %@", searchBar.text!).sorted(byKeyPath: "dateCreated", ascending: true) //shows item created earlier
         tableView.reloadData()
 
     }

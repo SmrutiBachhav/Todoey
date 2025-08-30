@@ -8,7 +8,6 @@
 
 import UIKit
 import RealmSwift
-import SwipeCellKit
 import ChameleonFramework
 
 class CategoryViewController: SwipeTableViewController  {
@@ -27,13 +26,18 @@ class CategoryViewController: SwipeTableViewController  {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent(".sqlite"))
+        //print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent(".sqlite"))
         
         loadCategories()
         
         //remove separators style
         tableView.separatorStyle = .none
-
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        guard let navBar = navigationController?.navigationBar else { fatalError("Navigation Bar doesn't exist it is null") }
+        navBar.backgroundColor = UIColor(hexString: "1B4348")
+        //navBar.titleTextAttributes = [NSAttributedString.Key.foregroundColor: UIColor.white]//
     }
     
     //MARK: - TableView DataSource Methods
@@ -48,17 +52,21 @@ class CategoryViewController: SwipeTableViewController  {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         //tap into the cell that gets created at current indexPath inside our super view i.e SwipeTableViewController
         let cell  = super.tableView(tableView, cellForRowAt: indexPath)
-        
-        if let category = categories?[indexPath.row] {
-            cell.textLabel?.text = category.name ?? "No Categories Added Yet!"
-            //hexstring from the color's hexvalue that is randomly generated, we stored in realm for the particular row (in addButtonPressed) color ?? defaultColor
-            cell.backgroundColor = UIColor(hexString: category.color ?? "1B4348")
-        }
+        cell.textLabel?.text = categories?[indexPath.row].name ?? "No Categories added yet"
 
-        cell.accessoryType = .disclosureIndicator
-        
+        if let category = categories?[indexPath.row] {
+            guard let categoryColor = UIColor(hexString: category.color) else {
+                fatalError()
+            }
+            configurePebbleView(for: cell, with: categoryColor)
+
+//            cell.backgroundColor = categoryColor
+//            cell.textLabel?.textColor = ContrastColorOf(categoryColor, returnFlat: true)
+        }
+        //cell.accessoryType = .disclosureIndicator
         return cell
     }
+    
     
     //MARK: - TableView Delegate Methods
     //To show  todo lists for the selected category
@@ -66,6 +74,8 @@ class CategoryViewController: SwipeTableViewController  {
     //trigger when we select one of the rows
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         performSegue(withIdentifier: "goToItems", sender: self)
+        tableView.deselectRow(at: indexPath, animated: true)
+
     }
     
     //for more than view from a view use if (if identifier = "goToItems" then go to this segue)
