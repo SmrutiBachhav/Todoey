@@ -9,6 +9,7 @@
 import UIKit
 import RealmSwift
 import SwipeCellKit
+import ChameleonFramework
 
 class CategoryViewController: SwipeTableViewController  {
     
@@ -29,6 +30,9 @@ class CategoryViewController: SwipeTableViewController  {
         print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent(".sqlite"))
         
         loadCategories()
+        
+        //remove separators style
+        tableView.separatorStyle = .none
 
     }
     
@@ -44,8 +48,13 @@ class CategoryViewController: SwipeTableViewController  {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         //tap into the cell that gets created at current indexPath inside our super view i.e SwipeTableViewController
         let cell  = super.tableView(tableView, cellForRowAt: indexPath)
-        cell.textLabel?.text = categories?[indexPath.row].name ?? "No Categories Added Yet!"
         
+        if let category = categories?[indexPath.row] {
+            cell.textLabel?.text = category.name ?? "No Categories Added Yet!"
+            //hexstring from the color's hexvalue that is randomly generated, we stored in realm for the particular row (in addButtonPressed) color ?? defaultColor
+            cell.backgroundColor = UIColor(hexString: category.color ?? "1B4348")
+        }
+
         cell.accessoryType = .disclosureIndicator
         
         return cell
@@ -91,6 +100,7 @@ class CategoryViewController: SwipeTableViewController  {
             } else {
                 let newCategory =  Category()
                 newCategory.name = textField.text!
+                newCategory.color = UIColor.randomFlat().hexValue()
                 //self.categoryArray.append(newCategory) no need to append as Results is auto-updating container type
                 
                 self.save(category: newCategory)

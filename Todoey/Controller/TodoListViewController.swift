@@ -8,6 +8,7 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
 class TodoListViewController: SwipeTableViewController {
     
@@ -16,7 +17,7 @@ class TodoListViewController: SwipeTableViewController {
     
     //instance of Realm
     let realm = try! Realm()
-    
+    //passed from categoryView....
     var selectedCategory: Category? {
         didSet{
             loadItems()
@@ -27,6 +28,8 @@ class TodoListViewController: SwipeTableViewController {
         super.viewDidLoad()
         
         print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist"))
+        
+        tableView.separatorStyle = .none
     
     }
     
@@ -37,7 +40,7 @@ class TodoListViewController: SwipeTableViewController {
         return todoItems?.count ?? 1
     }
     
-    //SPECIFIES HOW A CELL IS TO BE SHOWN
+    //SPECIFIES HOW A CELL IS TO BE SHOWN, get called for every cell/row in tableView
     //to add content to the specific cell through we can say indexpath (list of indices that specifies the location)
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         //resuable cell - create whole bunch of reusable cells
@@ -47,6 +50,14 @@ class TodoListViewController: SwipeTableViewController {
         if let item = todoItems?[indexPath.row] {
             //indexpath.row current row of the current indexpath. row- the value of the current index path of the row
             cell.textLabel?.text = item.title
+            //darken(byper...) is optional and backgroundColor needs definite value therfore if let to unwrap the optional
+            //check for UIColor is not empty then darken by.... SelectedCategory will definitely have value as todoItems definitely has value and comes from selectedCategory(loadItems)
+            if let color = UIColor(hexString: selectedCategory!.color)?.darken(byPercentage: CGFloat(indexPath.row)/CGFloat(todoItems!.count)) {
+                cell.backgroundColor = color
+                //text color according to background color (light->black text or dark->white text)
+                cell.textLabel?.textColor = ContrastColorOf(color, returnFlat: true)
+            }
+            
             cell.accessoryType = item.done ? .checkmark : .none
         } else {
             cell.textLabel?.text = "No Items Added Yet!"
